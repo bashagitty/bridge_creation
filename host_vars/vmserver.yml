@@ -1,0 +1,4 @@
+bridge1_name: br0
+bridge2_name: br1
+bridge1_ip: 192.168.1.1/24
+bridge2_ip: 192.168.2.1/24

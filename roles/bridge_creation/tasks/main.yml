@@ -1,0 +1,102 @@
+---
+# tasks file for bridge_creation
+
+# Install bridge-utils package on Debian-based systems
+- name: Install bridge-utils package
+  ansible.builtin.apt:
+    name: bridge-utils
+    state: present
+  when: ansible_os_family == "Debian"
+  become: yes
+
+# Installing net-tools package
+- name: Install net-tools package
+  ansible.builtin.apt:
+    name: net-tools
+    state: present
+  when: ansible_os_family == "Debian"
+  become: yes
+
+# Install NetworkManager 
+- name: Install NetworkManager on Debian-based systems
+  ansible.builtin.apt:
+    name: network-manager
+    state: present
+  when: ansible_os_family == "Debian"
+  become: yes
+
+# Ensure NetworkManager is running 
+- name: Ensure NetworkManager is running on Debian-based systems
+  ansible.builtin.systemd:
+    name: NetworkManager
+    state: started
+    enabled: yes
+  when: ansible_os_family == "Debian"
+  become: yes
+
+# Configure NetworkManager to manage all devices
+- name: Ensure NetworkManager manages all devices
+  ansible.builtin.lineinfile:
+    path: /etc/NetworkManager/NetworkManager.conf
+    regexp: '^managed='
+    line: 'managed=true'
+    state: present
+  when: ansible_os_family == "Debian"
+  become: yes
+
+- name: Ensure NetworkManager manages all devices in keyfile
+  ansible.builtin.blockinfile:
+    path: /etc/NetworkManager/NetworkManager.conf
+    block: |
+      [keyfile]
+      unmanaged-devices=none
+  when: ansible_os_family == "Debian"
+  become: yes
+
+- name: Restart NetworkManager
+  ansible.builtin.systemd:
+    name: NetworkManager
+    state: restarted
+  when: ansible_os_family == "Debian"
+  become: yes
+
+# Ensuring nmcli is available
+- name: Check for nmcli
+  ansible.builtin.command: which nmcli
+  register: nmcli_check
+  ignore_errors: yes
+
+# Create first network bridge with nmcli 
+- name: Create first network bridge with nmcli
+  ansible.builtin.command: nmcli connection add type bridge con-name '{{ bridge1_name }}' ifname '{{ bridge1_name }}'
+  when: nmcli_check.rc == 0
+  become: yes
+
+- name: Set first network bridge IP address with nmcli
+  ansible.builtin.command: nmcli connection modify '{{ bridge1_name }}' ipv4.addresses '{{ bridge1_ip }}' ipv4.method manual
+  when: nmcli_check.rc == 0
+  become: yes
+
+- name: Bring up the first network bridge with nmcli
+  ansible.builtin.command: nmcli connection up '{{ bridge1_name }}'
+  when: nmcli_check.rc == 0
+  become: yes
+
+
+# Create second network bridge with nmcli
+- name: Create second network bridge with nmcli
+  ansible.builtin.command: nmcli connection add type bridge con-name '{{ bridge2_name }}' ifname '{{ bridge2_name }}'
+  when: nmcli_check.rc == 0
+  become: yes
+
+
+- name: Set second network bridge IP address with nmcli
+  ansible.builtin.command: nmcli connection modify '{{ bridge2_name }}' ipv4.addresses '{{ bridge2_ip }}' ipv4.method manual
+  when: nmcli_check.rc == 0
+  become: yes
+
+- name: Bring up the second network bridge with nmcli
+  ansible.builtin.command: nmcli connection up '{{ bridge2_name }}'
+  when: nmcli_check.rc == 0
+  become: yes
+

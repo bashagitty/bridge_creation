@@ -1,0 +1,7 @@
+---
+- name: Creating Network Bridges and VM and Containers
+  hosts: vmserver
+  vars_files:
+    - host_vars/vmserver.yml
+  roles:
+    - bridge_creation
